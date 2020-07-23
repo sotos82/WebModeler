@@ -135,6 +135,10 @@ public class ModelManager : MonoBehaviour {
                 break;
             case ToolState.Extrude:
 
+                if(selectionState != SelectionState.Face) {
+                    break;
+                }
+
                 if (Input.GetMouseButton(0)) {
                     if (selectedModel3D != null) {
                         float magnitude = Input.GetAxis("Mouse X") + Input.GetAxis("Mouse Y");
