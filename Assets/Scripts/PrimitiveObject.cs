@@ -9,6 +9,26 @@ public class PrimitiveObject : MonoBehaviour {
 
     public enum QuadOrientation { up, down, left, right, front, back }
 
+    public MeshFilter PrimMeshFilter { protected set; get; }
+    public Vector3 initPos;
+
+    public List<Point> PointList { protected set; get; } = new List<Point>();
+
+    private Color initialColor;
+    protected void Awake() {
+
+        gameObject.layer = 9;
+
+        initialColor = GetComponent<Renderer>().material.color;
+    }
+
+    public void SetPointsActive(bool set) {
+        for (int i = 0; i < PointList.Count; i++) {
+            PointList[i].gameObject.SetActive(set);
+        }
+    }
+
+    #region MakeXStripe
     public static PrimitiveObject MakeXStripe(Transform parent, float length, float width, Vector3 pos, bool hasCollider) {
 
         Vector3[] lineVertices = new Vector3[4];
@@ -17,77 +37,13 @@ public class PrimitiveObject : MonoBehaviour {
         lineVertices[2] = new Vector3(-length, 0, width);
         lineVertices[3] = new Vector3(length, 0, width);
 
-        return MakeRectangle(parent, lineVertices, pos, hasCollider);
+        PrimitiveObject po = MakeRectangle(parent, lineVertices, pos, hasCollider);
+        po.SetPointsActive(false);
+        return po;
     }
+    #endregion
 
-    public Vector3 GetNormal {
-        get {
-            Vector3[] vertices = PrimMeshFilter.mesh.vertices;
-            return vertices.Length >= 3 ? Vector3.Cross(vertices[2] - vertices[1], vertices[1] - vertices[0]).normalized : Vector3.zero;
-        }
-    }
-
-    public Vector3 GetGlobalNormal0 {
-        get {
-            Vector3[] vertices = PrimMeshFilter.mesh.vertices;
-            for (int i = 0; i < vertices.Length; i++) {
-                vertices[i] = GetParent().transform.rotation * vertices[i];
-            }             
-            return vertices.Length >= 3 ? Vector3.Cross(vertices[2] - vertices[1], vertices[1] - vertices[0]).normalized : Vector3.zero;
-        }
-    }
-
-    public Vector3 initPos;
-
-    public void ExpandFace(PrimitiveObject face, int indice) {
-        Vector3 normal = face.GetNormal;
-        Vector3 normEps = normal * eps;
-        Vector3[] verticesFace = face.PrimMeshFilter.mesh.vertices;
-
-        transform.position = (face.transform.position + face.initPos) * 0.5f + (verticesFace[indiceSequence[indice]] + verticesFace[indiceSequence[indice + 1]]) * 0.5f;
-
-        Vector3[] vertices = PrimMeshFilter.mesh.vertices;
-
-        vertices[0] = face.initPos + verticesFace[indiceSequence[indice]] - transform.position - normEps;
-        vertices[1] = face.initPos + verticesFace[indiceSequence[indice + 1]] - transform.position - normEps;
-        vertices[2] = face.transform.position + verticesFace[indiceSequence[indice]] - transform.position + normEps;
-        vertices[3] = face.transform.position + verticesFace[indiceSequence[indice + 1]] - transform.position + normEps;
-
-        PrimMeshFilter.mesh.vertices = vertices;
-        PrimMeshFilter.mesh.RecalculateBounds();
-        MeshCollider col = GetComponent<MeshCollider>();
-        col.sharedMesh = PrimMeshFilter.mesh;
-    }
-
-    public void MoveFaceTowardsNormal(float magnitude) {
-        float speed = 6f;
-        transform.position = Vector3.MoveTowards(transform.position, transform.position + GetNormal * magnitude, speed * Time.deltaTime);
-
-        //MakeRectangle
-        //UpdatePrimitiveObject
-    }
-
-    public void UpdateUniformlyPrimitiveObject(float magnitude, bool updatePos) {
-
-        if(updatePos == true) {
-            transform.position += (transform.position - GetParent().transform.position) * Time.deltaTime * magnitude;
-        }
-
-        Mesh mesh = PrimMeshFilter.mesh;
-        Vector3[] vertices = mesh.vertices;
-        for (int j = 0; j < vertices.Length; j++) {
-            Vector3 v = vertices[j];
-            vertices[j] += v * Time.deltaTime * magnitude;
-        }
-        mesh.vertices = vertices;
-        mesh.RecalculateBounds();
-        MeshCollider col = GetComponent<MeshCollider>();
-        col.sharedMesh = mesh;
-
-    }
-
-    public MeshFilter PrimMeshFilter { protected set; get; }
-
+    #region MakeZStripe
     public static PrimitiveObject MakeZStripe(Transform parent, float length, float width, Vector3 pos, bool hasCollider) {
 
         Vector3[] lineVertices = new Vector3[4];
@@ -96,9 +52,72 @@ public class PrimitiveObject : MonoBehaviour {
         lineVertices[2] = new Vector3(width, 0, -length);
         lineVertices[3] = new Vector3(width, 0, length);
 
-        return MakeRectangle(parent, lineVertices, pos, hasCollider);
+        PrimitiveObject po = MakeRectangle(parent, lineVertices, pos, hasCollider);
+        po.SetPointsActive(false);
+        return po;
+    }
+    #endregion
+
+    #region Normals
+    public Vector3 GetNormal {
+        get {
+            Vector3[] vertices = PrimMeshFilter.mesh.vertices;
+            return vertices.Length >= 3 ? Vector3.Cross(vertices[2] - vertices[1], vertices[1] - vertices[0]).normalized : Vector3.zero;
+        }
     }
 
+    public Vector3 GetGlobalNormal {
+        get {
+            Vector3[] vertices = PrimMeshFilter.mesh.vertices;
+            for (int i = 0; i < vertices.Length; i++) {
+                vertices[i] = GetCompound().transform.rotation * vertices[i];
+            }             
+            return vertices.Length >= 3 ? Vector3.Cross(vertices[2] - vertices[1], vertices[1] - vertices[0]).normalized : Vector3.zero;
+        }
+    }
+    #endregion
+
+    public void MoveFaceTowardsNormal(float magnitude) {
+        float speed = 6f;
+        transform.position = Vector3.MoveTowards(transform.position, transform.position + GetNormal * magnitude, speed * Time.deltaTime);
+    }
+
+    public float Magnitute {
+        //set;
+        //get { return Mathf.Abs(vertices[1].x - vertices[0].x)};
+        get {
+            return Mathf.Abs(PrimMeshFilter.mesh.vertices[1].x - PrimMeshFilter.mesh.vertices[0].x);
+        }
+    }
+
+    #region UpdateUniformlyPrimitiveObject
+    public void UpdateUniformlyPrimitiveObject(float magnitude, bool updatePos) {
+
+        if(updatePos == true) {
+            transform.position += (transform.position - GetCompound().transform.position) * Time.deltaTime * magnitude;
+        }
+
+        Mesh mesh = PrimMeshFilter.mesh;
+        Vector3[] vertices = mesh.vertices;
+
+        //Magnitute = Mathf.Abs(vertices[1].x - vertices[0].x);
+
+        for (int j = 0; j < vertices.Length; j++) {
+            Vector3 v = vertices[j];
+            vertices[j] += v * Time.deltaTime * magnitude;
+
+            PointList[j].transform.position = vertices[j] + transform.position;
+        }
+
+        mesh.vertices = vertices;
+        mesh.RecalculateBounds();
+        MeshCollider col = GetComponent<MeshCollider>();
+        col.sharedMesh = mesh;
+
+    }
+    #endregion
+
+    #region MakeTriangle
     public static PrimitiveObject MakeTriangle(Transform parent, Vector3 a, Vector3 b, Vector3 pos, Vector3 c) {
 
         GameObject go = new GameObject("Triangle");
@@ -106,8 +125,9 @@ public class PrimitiveObject : MonoBehaviour {
         go.transform.SetParent(parent);
 
         MeshRenderer meshRenderer = go.AddComponent<MeshRenderer>();
-        //meshRenderer.sharedMaterial = new Material(LoadResources.doubleSideShader);
-        meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
+        go.GetComponent<Renderer>().material = LoadResources.defaultMaterial;
+
+        //meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
 
         MeshFilter meshFilter = go.AddComponent<MeshFilter>();
 
@@ -125,7 +145,8 @@ public class PrimitiveObject : MonoBehaviour {
         int[] tris = new int[3] { 0, 1, 2 };
         mesh.triangles = tris;
 
-        Vector3 normal = Vector3.Cross(vertices[2] - vertices[1], vertices[1] - vertices[0]).normalized;
+        Vector3 normal = Vector3.Cross(vertices[2] - vertices[0], vertices[1] - vertices[0]).normalized;
+
         Vector3[] normals = new Vector3[4] { normal, normal, normal, normal };
         mesh.normals = normals;
 
@@ -135,7 +156,7 @@ public class PrimitiveObject : MonoBehaviour {
             new Vector2(0, 1),
         };
         mesh.uv = uv;
-
+        mesh.RecalculateNormals();
         go.AddComponent<MeshCollider>();
 
         go.transform.position += pos;
@@ -150,21 +171,29 @@ public class PrimitiveObject : MonoBehaviour {
         PrimitiveObject po = go.GetComponent<PrimitiveObject>();
         po.PrimMeshFilter = meshFilter;
 
+        for (int i = 0; i < vertices.Length; i++) {
+            po.PointList.Add(Instantiate(LoadResources.point, vertices[i] + po.transform.position, Quaternion.identity, po.transform).GetComponent<Point>());
+        }
+
         return po;
     }
+    #endregion
 
+
+    #region MakeRectangle
     public static PrimitiveObject MakeRectangle(Transform parent, Vector3[] vertices, Vector3 pos, bool hasCollider = true) {
 
         if (vertices.Length != 4) {
             Debug.LogError("size of vertices must be 4");
         }
 
-        GameObject go = new GameObject("Rectangle");
+        GameObject go = new GameObject("Rectangle");        
 
         go.transform.SetParent(parent);
 
         MeshRenderer meshRenderer = go.AddComponent<MeshRenderer>();
-        meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
+        go.GetComponent<Renderer>().material = LoadResources.defaultMaterial;
+        //meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
 
         MeshFilter meshFilter = go.AddComponent<MeshFilter>();
 
@@ -178,7 +207,6 @@ public class PrimitiveObject : MonoBehaviour {
         }
 
         Mesh mesh = new Mesh { vertices = vertices };
-
         //front is clock wise
         int[] tris = new int[6] {
              1, 0, 2,
@@ -186,9 +214,11 @@ public class PrimitiveObject : MonoBehaviour {
         };
         mesh.triangles = tris;
 
-        Vector3 normal = Vector3.Cross(vertices[2] - vertices[1], vertices[1] - vertices[0]).normalized;
+        Vector3 normal = Vector3.Cross(vertices[2] - vertices[0], vertices[1] - vertices[0]).normalized;
         Vector3[] normals = new Vector3[4] { normal, normal, normal, normal };
+
         mesh.normals = normals;
+        mesh.RecalculateNormals();
 
         Vector2[] uv = new Vector2[4] {
             new Vector2(0, 0),
@@ -207,17 +237,21 @@ public class PrimitiveObject : MonoBehaviour {
 
         meshFilter.mesh = mesh;
 
-        //Debug.DrawLine(pos, pos + normal * 3, Color.green, 1000);
-
         go.transform.position += pos;
 
         go.AddComponent<PrimitiveObject>();
         PrimitiveObject po = go.GetComponent<PrimitiveObject>();
         po.PrimMeshFilter = meshFilter;
 
+        for (int i = 0; i < vertices.Length; i++) {
+            po.PointList.Add(Instantiate(LoadResources.point, vertices[i] + po.transform.position, Quaternion.identity, po.transform).GetComponent<Point>());
+        }
+
         return po;
     }
+    #endregion
 
+    #region MakeQuad
     public static PrimitiveObject MakeQuad(Transform parent, float size, Vector3 pos, QuadOrientation qo = QuadOrientation.up, bool hasCollider = true) {
 
         float halfSize = 0.5f * size;
@@ -257,14 +291,7 @@ public class PrimitiveObject : MonoBehaviour {
         PrimitiveObject po = MakeRectangle(parent, vertices, pos, hasCollider);
         return po;
     }
-
-    Color initialColor;
-    protected void Awake() {
-
-        gameObject.layer = 9;
-
-        initialColor = GetComponent<Renderer>().material.color;
-    }
+    #endregion
 
     private bool isSelected = false;
     public bool IsSelected {
@@ -293,7 +320,7 @@ public class PrimitiveObject : MonoBehaviour {
         transform.position = pos;
     }
 
-    public CompoundObject GetParent() {
+    public CompoundObject GetCompound() {
         return transform.parent.GetComponent<CompoundObject>();
     }
 

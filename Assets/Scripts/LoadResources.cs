@@ -3,12 +3,14 @@ using System.Collections.Generic;
 
 public class LoadResources : MonoBehaviour {
 
+    public static GameObject point;
     public static Shader doubleSideShader;
 
-    public static string VERSION = "PROTO_v0.1";
+    public static Material defaultMaterial;
 
     void Awake() {
-        doubleSideShader = Shader.Find("Ciconia Studio/Double Sided/Standard/Diffuse Bump");
 
+        defaultMaterial = Resources.Load("Materials/defaultMaterial") as Material;
+        point = Resources.Load("Prefabs/Point") as GameObject;
     }
 }

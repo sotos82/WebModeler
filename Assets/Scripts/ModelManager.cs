@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ModelManager : Singleton<ModelManager> {
+public class ModelManager : MonoBehaviour {
 
     public enum ModelerState { None, DrawQuad, DrawCube, Extrude }
-    public enum SelectionState { Object, Face, Edge, Vertice }
+    public enum SelectionState { Object, Face, Edge, Vertex }
     public enum ToolState { None, Extrude }
     protected enum DrawState { isSettingUp, isPlacing, isMoving, isDrawing }
 
@@ -14,23 +14,18 @@ public class ModelManager : Singleton<ModelManager> {
     protected SelectionState selectionState;
     protected DrawState drawState;
 
-    public void SetToolState(ToolState state) {
-        toolState = state;
+    private static ModelManager _instance;
+    public static ModelManager instance {
+        get {
+            if (_instance == null)
+                _instance = FindObjectOfType<ModelManager>();
+            return _instance;
+        }
     }
-
-    public void SetSelectionState(SelectionState state) {
-        selectionState = state;
-    }
-
-    public void SetModelerState(ModelerState state) {
-        modelerState = state;
-    }
-
-    public Transform ModelParent;
 
     private void Awake() {
 
-        Instance = this;
+        _instance = this;
 
         ModelParent = GameObject.Find(nameof(ModelParent)).transform;
     }
@@ -50,11 +45,24 @@ public class ModelManager : Singleton<ModelManager> {
         }
     }
 
+    public void SetToolState(ToolState state) {
+        toolState = state;
+    }
+
+    public void SetSelectionState(SelectionState state) {
+        selectionState = state;
+    }
+
+    public void SetModelerState(ModelerState state) {
+        modelerState = state;
+    }
+
+    public Transform ModelParent;
+
+    Point hitPoint;
     PrimitiveObject hitModel3D;
     PrimitiveObject selectedModel3D;
     Transform hitTr;
-    Transform manTr;
-    Vector3 lastMousePos;
 
     private void Update() {
 
@@ -62,32 +70,46 @@ public class ModelManager : Singleton<ModelManager> {
         Ray rayInfo = Camera.main.ScreenPointToRay(Input.mousePosition);
         bool isHit = Physics.Raycast(rayInfo, out RaycastHit hitInfo, float.MaxValue, layerMask: layer_mask);
 
-        if (hitModel3D != null) {
-            if (selectionState == SelectionState.Face) {
-                if (hitModel3D.IsSelected == false) {
-                    hitModel3D.RestoreColor();
-                }
-            } else if (selectionState == SelectionState.Object) {
-                if (hitModel3D.GetParent().IsSelected == false) {
-                    hitModel3D.GetParent().RestoreColor();
-                }
+        if (selectionState == SelectionState.Vertex) {
+            if (hitPoint != null) {
+                hitPoint.SetRendererEnabled(false);
+            }
+        }
+        if (selectionState == SelectionState.Face) {
+            if (hitModel3D != null && hitModel3D.IsSelected == false) {
+                hitModel3D.RestoreColor();
+            }
+        } else if (selectionState == SelectionState.Object) {
+            if (hitModel3D != null && hitModel3D.GetCompound().IsSelected == false) {
+                hitModel3D.GetCompound().RestoreColor();
             }
         }
 
         hitTr = null;
         hitModel3D = null;
+        hitPoint = null;
+
+        //print(hitInfo.transform);
+        //print(modelerState + " " + toolState + " " + selectionState + " " + isExtruding);
 
         if (isHit == true) {
             hitTr = hitInfo.transform;
-            hitModel3D = hitTr.GetComponent<PrimitiveObject>();
             if (isExtruding == false) {
+                if (selectionState == SelectionState.Vertex) {
+                    hitPoint = hitTr.GetComponent<Point>();
+                    if (hitPoint != null) {
+                        hitPoint.SetRendererEnabled(true);
+                    }
+                }
                 if (selectionState == SelectionState.Face) {
-                    if (hitModel3D.IsSelected == false) {
+                    hitModel3D = hitTr.GetComponent<PrimitiveObject>();
+                    if (hitModel3D != null && hitModel3D.IsSelected == false) {
                         hitModel3D.SetColor(Color.red);
                     }
                 } else if (selectionState == SelectionState.Object) {
-                    if (hitModel3D.IsSelected == false) {
-                        hitModel3D.GetParent().SetColor(Color.red);
+                    hitModel3D = hitTr.GetComponent<PrimitiveObject>();
+                    if (hitModel3D != null && hitModel3D.IsSelected == false) {
+                        hitModel3D.GetCompound().SetColor(Color.red);
                     }
                 }
             }
@@ -109,20 +131,23 @@ public class ModelManager : Singleton<ModelManager> {
 
         switch (toolState) {
             case ToolState.None:
-                
+                isExtruding = false;
                 break;
             case ToolState.Extrude:
 
                 if (Input.GetMouseButton(0)) {
-                    float magnitude = Input.GetAxis("Mouse X") + Input.GetAxis("Mouse Y");
-                    selectedModel3D.GetParent().ExtrudeFace(selectedModel3D, magnitude);
-                    isExtruding = true;
-                    //selectedModel3D.ExtrudeFace(magnitude);
+                    if (selectedModel3D != null) {
+                        float magnitude = Input.GetAxis("Mouse X") + Input.GetAxis("Mouse Y");
+                        selectedModel3D.GetCompound().ExtrudeFace(selectedModel3D, magnitude);
+                        isExtruding = true;
+                    }
                 }
                 if (isExtruding == true) {
                     if (Input.GetMouseButtonUp(0)) {
-                        selectedModel3D.GetParent().FinishExtrude();
-                        isExtruding = false;
+                        if (selectedModel3D != null) {
+                            selectedModel3D.GetCompound().FinishExtrude();
+                            isExtruding = false;
+                        }
                         //print("Extrude finished");
                     }
                 }
@@ -132,29 +157,27 @@ public class ModelManager : Singleton<ModelManager> {
                 break;
         }
     }
-    bool isExtruding = false;
 
+    bool isExtruding = false;
     #region SelectionActions
     protected ModelerState SelectionActions(ModelerState modelerState) {
         if (Input.GetMouseButtonDown(0)) {
             if (selectedModel3D != null) {
-                selectedModel3D.GetParent().SelectAll(false);
+                selectedModel3D.GetCompound().SelectAll(false);
             }
             switch (selectionState) {
                 case SelectionState.Object:
 
                     if (hitModel3D != null) {
-                        manTr = hitTr;
                         if (selectedModel3D != null) {
-                            selectedModel3D.GetParent().SelectAll(false);
+                            selectedModel3D.GetCompound().SelectAll(false);
                         }
                         selectedModel3D = hitTr.GetComponent<PrimitiveObject>();
-                        selectedModel3D.GetParent().SelectAll(true);
+                        selectedModel3D.GetCompound().SelectAll(true);
                     }
                     break;
                 case SelectionState.Face:
                     if (hitModel3D != null) {
-                        manTr = hitTr;
                         if (selectedModel3D != null) {
                             selectedModel3D.IsSelected = false;
                         }
@@ -164,7 +187,8 @@ public class ModelManager : Singleton<ModelManager> {
                     break;
                 case SelectionState.Edge:
                     break;
-                case SelectionState.Vertice:
+                case SelectionState.Vertex:
+
                     break;
                 default:
                     break;
@@ -219,9 +243,15 @@ public class ModelManager : Singleton<ModelManager> {
 
                 float magnitude = (Input.GetAxis("Mouse X") + Input.GetAxis("Mouse Y"));
 
+                UIManager.instance.InputPanel.SetMagnitudeFieldActive(true);
+                UIManager.instance.InputPanel.SetMagnitudeFieldText(newCo.Magnitute.ToString());
+
                 newCo.UpdateUniformlyCompoundbject(magnitude);
 
                 if (Input.GetMouseButtonUp(0)) {
+
+                    UIManager.instance.InputPanel.SetMagnitudeFieldActive(false);
+
                     drawState = DrawState.isPlacing;
                     return ModelerState.None;
                 }
@@ -235,10 +265,3 @@ public class ModelManager : Singleton<ModelManager> {
     }
     #endregion
 }
-
-//if (isLeftMouseButtonDown == true) {
-//    var newPosition = Input.mousePosition;
-//    mouseDist += newPosition.y - lastMousePos.y;
-//    lastMousePos = newPosition;
-//    manTr.transform.position += new Vector3(0, mouseDist, 0) * Time.deltaTime * 0.005f;
-//}

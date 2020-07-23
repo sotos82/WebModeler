@@ -17,11 +17,11 @@ public class DrawPrimitivesButtonActions : MonoBehaviour {
     }
 
     public void DrawQuadButtonAction() {
-        ModelManager.Instance.SetModelerState(ModelManager.ModelerState.DrawQuad);
+        ModelManager.instance.SetModelerState(ModelManager.ModelerState.DrawQuad);
     }
 
     public void DrawCubeButtonAction() {
-        ModelManager.Instance.SetModelerState(ModelManager.ModelerState.DrawCube);
+        ModelManager.instance.SetModelerState(ModelManager.ModelerState.DrawCube);
     }
 
 }

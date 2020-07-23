@@ -26,18 +26,18 @@ public class ObjectSelectionActions : MonoBehaviour {
     }
 
     public void SelectCompoundAction(bool isOn) {
-        ModelManager.Instance.SetSelectionState(ModelManager.SelectionState.Object);
+        ModelManager.instance.SetSelectionState(ModelManager.SelectionState.Object);
     }
 
     public void SelectFaceAction(bool isOn) {
-        ModelManager.Instance.SetSelectionState(ModelManager.SelectionState.Face);
+        ModelManager.instance.SetSelectionState(ModelManager.SelectionState.Face);
     }
 
     public void SelectEdgeAction(bool isOn) {
-        ModelManager.Instance.SetSelectionState(ModelManager.SelectionState.Edge);
+        ModelManager.instance.SetSelectionState(ModelManager.SelectionState.Edge);
     }
 
     public void SelecVerticeAction(bool isOn) {
-        ModelManager.Instance.SetSelectionState(ModelManager.SelectionState.Vertice);
+        ModelManager.instance.SetSelectionState(ModelManager.SelectionState.Vertex);
     }
 }

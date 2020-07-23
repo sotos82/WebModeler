@@ -51,10 +51,15 @@ public class CompoundObject : MonoBehaviour {
         return co;
     }
 
+    public float Magnitute { get; set; }
+
     public void UpdateUniformlyCompoundbject(float magnitude) {
+
+        float magnScale = 2f;
+        Magnitute = primObjectList[0].Magnitute;
+
         for (int i = 0; i < primObjectList.Count; i++) {
             PrimitiveObject po = primObjectList[i];
-            float magnScale = 2f;
             po.UpdateUniformlyPrimitiveObject(magnScale * magnitude, initialShape == InitialShape.Cube);
         }
     }
@@ -90,8 +95,6 @@ public class CompoundObject : MonoBehaviour {
             for (int i = 0; i < extrFacesList.Count; i++) {
                 PrimitiveObject extrPo = extrFacesList[i];
 
-                //extrPo.ExpandFace(face, i);
-
                 extrPo.transform.position = (face.transform.position + face.initPos) * 0.5f + (verticesFace[indiceSequence[i]] + verticesFace[indiceSequence[i + 1]]) * 0.5f;
 
                 Vector3[] vertices = extrPo.PrimMeshFilter.mesh.vertices;
@@ -103,6 +106,11 @@ public class CompoundObject : MonoBehaviour {
 
                 extrPo.PrimMeshFilter.mesh.vertices = vertices;
                 extrPo.PrimMeshFilter.mesh.RecalculateBounds();
+
+                for (int j = 0; j < vertices.Length; j++) {
+                    extrPo.PointList[j].transform.position = vertices[j] + extrPo.transform.position;
+                }
+
                 MeshCollider col = extrPo.GetComponent<MeshCollider>();
                 col.sharedMesh = extrPo.PrimMeshFilter.mesh;
             }

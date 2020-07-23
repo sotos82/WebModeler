@@ -18,9 +18,9 @@ public class ToolActions : MonoBehaviour {
 
     public void ExtrudeToggleAction(bool isOn) {        
         if(isOn == true) {
-            ModelManager.Instance.SetToolState(ModelManager.ToolState.Extrude);
+            ModelManager.instance.SetToolState(ModelManager.ToolState.Extrude);
         } else {
-            ModelManager.Instance.SetToolState(ModelManager.ToolState.None);
+            ModelManager.instance.SetToolState(ModelManager.ToolState.None);
         }
     }
 }
