@@ -8,13 +8,13 @@ public class ObjectSelectionActions : MonoBehaviour {
     protected Toggle SelectCompoundToggle;
     protected Toggle SelectFaceToggle;
     protected Toggle SelectEdgeToggle;
-    protected Toggle SelecVerticeToggle;
+    protected Toggle SelecVertexToggle;
 
     protected void Awake() {
         SelectCompoundToggle = transform.Find(nameof(SelectCompoundToggle)).GetComponent<Toggle>();
         SelectFaceToggle = transform.Find(nameof(SelectFaceToggle)).GetComponent<Toggle>();
         SelectEdgeToggle = transform.Find(nameof(SelectEdgeToggle)).GetComponent<Toggle>();
-        SelecVerticeToggle = transform.Find(nameof(SelecVerticeToggle)).GetComponent<Toggle>();
+        SelecVertexToggle = transform.Find(nameof(SelecVertexToggle)).GetComponent<Toggle>();
 
         SelectFaceAction(true);
         SelectFaceToggle.isOn = true;
@@ -22,7 +22,7 @@ public class ObjectSelectionActions : MonoBehaviour {
         SelectCompoundToggle.onValueChanged.AddListener(SelectCompoundAction);
         SelectFaceToggle.onValueChanged.AddListener(SelectFaceAction);
         SelectEdgeToggle.onValueChanged.AddListener(SelectEdgeAction);
-        SelecVerticeToggle.onValueChanged.AddListener(SelecVerticeAction);
+        SelecVertexToggle.onValueChanged.AddListener(SelecVerticeAction);
     }
 
     public void SelectCompoundAction(bool isOn) {

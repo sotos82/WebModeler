@@ -85,6 +85,8 @@ public class CamController : MonoBehaviour {
     }
     #endregion
 
+    private Vector3 lastMousePos;
+
     void LateUpdate() {
 
         float wheel = Input.GetAxis("Mouse ScrollWheel");
@@ -94,6 +96,8 @@ public class CamController : MonoBehaviour {
             ray = new Ray(transform.position, (Vector3.zero - transform.position).normalized);
         }
         bool rayIntersectsAnyCollider = Physics.Raycast(ray, out hit, maxCameraDistance, lm.value);
+
+        //print(state);
 
         if (isLocked) {
             if (lockedTransform != null) {
@@ -113,6 +117,13 @@ public class CamController : MonoBehaviour {
         }
 
         if (state != CameraState.isTargeting) {
+            if (panMode == true && Input.GetMouseButton(2) == true) {
+                if(state != CameraState.isPanning) {
+                    lastMousePos = Input.mousePosition;
+                }
+
+                state = CameraState.isPanning;
+            }
             if (Input.GetMouseButton(1) == true) {
                 state = CameraState.isRotating;
             } else if (Input.GetMouseButtonUp(1)) {
@@ -124,9 +135,6 @@ public class CamController : MonoBehaviour {
                 xDeg = transform.rotation.eulerAngles.y;
 
                 state = CameraState.isIdling;
-            } else if (panMode == true) {
-                if (MouseXBoarder() != 0 || MouseYBoarder() != 0)
-                    state = CameraState.isPanning;
             } else if (wheel != 0) {
                 state = CameraState.isZooming;
             }
@@ -199,7 +207,6 @@ public class CamController : MonoBehaviour {
 
             //#region Zooming
             //case CameraState.isZooming:
-
             //    Vector3 hitPoint = Vector3.zero;
             //    //if (rayIntersectsAnyCollider) {
             //    //    hitPoint = hit.point;
@@ -207,20 +214,16 @@ public class CamController : MonoBehaviour {
             //    //    planeZero.Raycast(ray, out float enter1);
             //    //    hitPoint = ray.GetPoint(enter1);
             //    //}
-
             //    perpendToViewplane.SetNormalAndPosition(-transform.forward, hitPoint);
             //    perpendToViewplane.Raycast(ray, out enter);
             //    rayPlanePoint = ray.GetPoint(Mathf.Min(enter, limit));
             //    ray.direction = transform.forward;
-
             //    //if (lockedTransform != null) {
             //    //    UnlockObject();
             //    //}
-
             //    float par = 0.05f;
             //    enter = Mathf.Abs(enter);
             //    //targetTransform.position = transform.forward * enter + transform.position;
-
             //    targetTransform.position = Vector3.zero;
             //    rayPlanePoint = Vector3.zero;
             //    if (wheel > 0) {
@@ -228,9 +231,7 @@ public class CamController : MonoBehaviour {
             //    } else if (wheel < 0) {
             //        desiredPosition = -MathLibrary.ClampMagnitude((targetTransform.position - transform.position), cameraMaxDistance, 50) * par + transform.position;
             //    }
-
             //    transform.position = Vector3.Lerp(transform.position, desiredPosition, zoomRate * Time.deltaTime / Time.timeScale);
-
             //    if (Vector3.SqrMagnitude(transform.position - desiredPosition) < zoomThres) {
             //        state = CameraState.isIdling;
             //    }
@@ -240,27 +241,64 @@ public class CamController : MonoBehaviour {
             #region Panning
             case CameraState.isPanning:
 
-                if (lockedTransform != null)
-                    UnlockObject();
+                Vector3 screenCenter = new Vector3(Screen.width, Screen.height, 0) * 0.5f;
 
-                float panNorm = transform.position.y;
-                if ((Input.mousePosition.x - Screen.width + panThres) > 0) {
-                    targetTransform.Translate(Vector3.right * -panSpeed * Time.deltaTime * panNorm);   //here, right is wrt the loc ref because Space.Self by default
-                    transform.Translate(Vector3.right * -panSpeed * Time.deltaTime * panNorm);
-                } else if ((Input.mousePosition.x - panThres) < 0) {
-                    targetTransform.Translate(Vector3.right * panSpeed * Time.deltaTime * panNorm);
-                    transform.Translate(Vector3.right * panSpeed * Time.deltaTime * panNorm);
+                Vector3 centerToMouse = Input.mousePosition - lastMousePos;
+
+                float distFromCenter = centerToMouse.magnitude;
+
+                if (lockedTransform != null) {
+                    UnlockObject();
                 }
-                if ((Input.mousePosition.y - Screen.height + panThres) > 0) {
-                    rayPlanePoint.Set(transform.forward.x, 0, transform.forward.z);
-                    targetTransform.Translate(rayPlanePoint.normalized * -panSpeed * Time.deltaTime * panNorm, Space.World);
-                    transform.Translate(rayPlanePoint.normalized * -panSpeed * Time.deltaTime * panNorm, Space.World);
+
+                rayPlanePoint.Set(transform.forward.x, 0, transform.forward.z);
+                targetTransform.Translate(centerToMouse * Time.deltaTime * panSpeed);   //here, right is wrt the loc ref because Space.Self by default
+                transform.Translate(centerToMouse * Time.deltaTime * panSpeed);
+
+                if(Input.GetMouseButtonUp(2) == true) {
+                    state = CameraState.isIdling;
                 }
-                if ((Input.mousePosition.y - panThres) < 0) {
-                    rayPlanePoint.Set(transform.forward.x, 0, transform.forward.z);
-                    targetTransform.Translate(rayPlanePoint.normalized * panSpeed * Time.deltaTime * panNorm, Space.World);
-                    transform.Translate(rayPlanePoint.normalized * panSpeed * Time.deltaTime * panNorm, Space.World);
-                }
+
+                //float panNorm = transform.position.y;
+                //if ((Input.mousePosition.x - Screen.width + panThres) > 0) {
+                //    targetTransform.Translate(Vector3.right * -panSpeed * Time.deltaTime * panNorm);   //here, right is wrt the loc ref because Space.Self by default
+                //    transform.Translate(Vector3.right * -panSpeed * Time.deltaTime * panNorm);
+                //} else if ((Input.mousePosition.x - panThres) < 0) {
+                //    targetTransform.Translate(Vector3.right * panSpeed * Time.deltaTime * panNorm);
+                //    transform.Translate(Vector3.right * panSpeed * Time.deltaTime * panNorm);
+                //}
+                //if ((Input.mousePosition.y - Screen.height + panThres) > 0) {
+                //    rayPlanePoint.Set(transform.forward.x, 0, transform.forward.z);
+                //    targetTransform.Translate(rayPlanePoint.normalized * -panSpeed * Time.deltaTime * panNorm, Space.World);
+                //    transform.Translate(rayPlanePoint.normalized * -panSpeed * Time.deltaTime * panNorm, Space.World);
+                //}
+                //if ((Input.mousePosition.y - panThres) < 0) {
+                //    rayPlanePoint.Set(transform.forward.x, 0, transform.forward.z);
+                //    targetTransform.Translate(rayPlanePoint.normalized * panSpeed * Time.deltaTime * panNorm, Space.World);
+                //    transform.Translate(rayPlanePoint.normalized * panSpeed * Time.deltaTime * panNorm, Space.World);
+                //}
+
+                //if (lockedTransform != null)
+                //    UnlockObject();
+
+                //float panNorm = transform.position.y;
+                //if ((Input.mousePosition.x - Screen.width + panThres) > 0) {
+                //    targetTransform.Translate(Vector3.right * -panSpeed * Time.deltaTime * panNorm);   //here, right is wrt the loc ref because Space.Self by default
+                //    transform.Translate(Vector3.right * -panSpeed * Time.deltaTime * panNorm);
+                //} else if ((Input.mousePosition.x - panThres) < 0) {
+                //    targetTransform.Translate(Vector3.right * panSpeed * Time.deltaTime * panNorm);
+                //    transform.Translate(Vector3.right * panSpeed * Time.deltaTime * panNorm);
+                //}
+                //if ((Input.mousePosition.y - Screen.height + panThres) > 0) {
+                //    rayPlanePoint.Set(transform.forward.x, 0, transform.forward.z);
+                //    targetTransform.Translate(rayPlanePoint.normalized * -panSpeed * Time.deltaTime * panNorm, Space.World);
+                //    transform.Translate(rayPlanePoint.normalized * -panSpeed * Time.deltaTime * panNorm, Space.World);
+                //}
+                //if ((Input.mousePosition.y - panThres) < 0) {
+                //    rayPlanePoint.Set(transform.forward.x, 0, transform.forward.z);
+                //    targetTransform.Translate(rayPlanePoint.normalized * panSpeed * Time.deltaTime * panNorm, Space.World);
+                //    transform.Translate(rayPlanePoint.normalized * panSpeed * Time.deltaTime * panNorm, Space.World);
+                //}
                 break;
             #endregion
 
