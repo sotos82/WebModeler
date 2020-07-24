@@ -18,6 +18,10 @@ public class Settings : MonoBehaviour {
     public void ClearSceneAction() {
         Transform modelPArent = GameObject.Find("ModelParent").transform;
 
+        UIManager.instance.InputPanel.SetAllActive(false);
+
+        UIManager.instance.ToolActions.ExtrudeToggleAction(false);
+
         foreach (Transform child in modelPArent) {
             Destroy(child.gameObject);
         }

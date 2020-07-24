@@ -65,7 +65,7 @@ public class CompoundObject : MonoBehaviour {
     }
     private readonly float eps = 0.00001f;
     protected List<PrimitiveObject> extrFacesList;
-    public void ExtrudeFace(PrimitiveObject face, float magnitude) {
+    public void ExtrudeFace(PrimitiveObject face, float magnitude, bool isContinous) {
 
         Vector3 normal = face.GetNormal;
         Vector3 normEps = normal * eps;
@@ -91,7 +91,7 @@ public class CompoundObject : MonoBehaviour {
         }
 
         if (extrFacesList != null) {
-            face.MoveFaceTowardsNormal(magnitude);
+            face.MoveFaceTowardsNormal(magnitude, isContinous);
             for (int i = 0; i < extrFacesList.Count; i++) {
                 PrimitiveObject extrPo = extrFacesList[i];
 

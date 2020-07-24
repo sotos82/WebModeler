@@ -10,14 +10,8 @@ public enum CameraState {
     isTargeting
 }
 
-public enum CameraMode {
-    SpaceRts,
-    InspectElement
-}
-
 public class CamController : MonoBehaviour {
     public LayerMask lm;
-    public CameraMode mode = CameraMode.SpaceRts;
     public CameraState state = CameraState.isIdling;
     public float initDistanceToCenter = 100;
     public float xSpeed = 100.0f;
@@ -90,11 +84,12 @@ public class CamController : MonoBehaviour {
     void LateUpdate() {
 
         float wheel = Input.GetAxis("Mouse ScrollWheel");
-        if (mode == CameraMode.SpaceRts) {
-            ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        } else {
-            ray = new Ray(transform.position, (Vector3.zero - transform.position).normalized);
-        }
+        ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        //if (mode == CameraMode.SpaceRts) {
+        //    ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        //} else {
+        //    ray = new Ray(transform.position, (Vector3.zero - transform.position).normalized);
+        //}
         bool rayIntersectsAnyCollider = Physics.Raycast(ray, out hit, maxCameraDistance, lm.value);
 
         //print(state);

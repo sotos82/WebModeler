@@ -77,9 +77,13 @@ public class PrimitiveObject : MonoBehaviour {
     }
     #endregion
 
-    public void MoveFaceTowardsNormal(float magnitude) {
+    public void MoveFaceTowardsNormal(float magnitude, bool isContinous) {
         float speed = 6f;
-        transform.position = Vector3.MoveTowards(transform.position, transform.position + GetNormal * magnitude, speed * Time.deltaTime);
+        float maxDistanceDelta = speed * Time.deltaTime;
+        if(isContinous == false) {
+            maxDistanceDelta = speed;
+        }
+        transform.position = Vector3.MoveTowards(transform.position, transform.position + GetNormal * magnitude, maxDistanceDelta);
     }
 
     public float Magnitute {

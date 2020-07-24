@@ -6,14 +6,7 @@ using UnityEngine.UI;
 public class InputPanel : MonoBehaviour {
 
     public InputField InputFieldMagnitude { protected set; get; }
-
-    public void SetMagnitudeFieldActive(bool set) {
-        InputFieldMagnitude.gameObject.SetActive(set);
-    }
-
-    public void SetMagnitudeFieldText(string s) {
-        InputFieldMagnitude.text = s;
-    }
+    public Button OkButton { protected set; get; }
 
     protected void Awake() {
 
@@ -23,12 +16,41 @@ public class InputPanel : MonoBehaviour {
 
         InputFieldMagnitude.onValueChanged.AddListener(InputFieldMagnitudeChanged);
 
-        SetMagnitudeFieldActive(false);
+        OkButton = transform.Find(nameof(OkButton)).GetComponent<Button>();
+        OkButton.onClick.AddListener(OkButtonAction);
 
+        SetAllActive(false);
+    }
+
+    public void SetAllActive(bool set) {
+        if (InputFieldMagnitude.gameObject.activeSelf != set) {
+            InputFieldMagnitude.gameObject.SetActive(set);
+            OkButton.gameObject.SetActive(set);
+            InputFieldMagnitude.text = "";
+        }
+    }
+
+    public void SetMagnitudeFieldActive(bool set) {
+        OkButton.gameObject.SetActive(false);
+        if (InputFieldMagnitude.gameObject.activeSelf != set) {
+            InputFieldMagnitude.gameObject.SetActive(set);
+            InputFieldMagnitude.text = "";
+        }
+    }
+
+    public void SetMagnitudeFieldText(string s) {
+        InputFieldMagnitude.text = s;
     }
 
     public void InputFieldMagnitudeChanged(string s) {
-        //print(s);
+
     }
 
+    public void OkButtonAction() {
+        if (float.TryParse(InputFieldMagnitude.text, out float magnitude)) {
+            if (magnitude != 0) {
+                ModelManager.instance.ExtrudeFaceOnce(magnitude, false);
+            }
+        }
+    }
 }
