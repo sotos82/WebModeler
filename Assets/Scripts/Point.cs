@@ -5,7 +5,7 @@ using UnityEngine;
 public class Point : MonoBehaviour {
 
     protected void Awake() {
-        SetRendererEnabled(false);
+        SetPointEnabled(false);
     }
 
     public CompoundObject GetCompound() {
@@ -16,7 +16,8 @@ public class Point : MonoBehaviour {
         GetComponent<Renderer>().material.color = c;
     }
 
-    public void SetRendererEnabled(bool set) {
+    public void SetPointEnabled(bool set) {
         transform.GetComponent<Renderer>().enabled = set;
+        //transform.GetComponent<SphereCollider>().enabled = set;
     }
 }

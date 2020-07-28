@@ -273,7 +273,7 @@ public class ModelManager : MonoBehaviour {
                 if (selectionState == SelectionState.Vertex) {
                     hitPoint = hitTr.GetComponent<Point>();
                     if (hitPoint != null) {
-                        hitPoint.SetRendererEnabled(true);
+                        hitPoint.SetPointEnabled(true);
                     }
                 }
                 if (selectionState == SelectionState.Face) {
@@ -296,7 +296,7 @@ public class ModelManager : MonoBehaviour {
     protected void RestoreSelectionAction() {
         if (selectionState == SelectionState.Vertex) {
             if (hitPoint != null) {
-                hitPoint.SetRendererEnabled(false);
+                hitPoint.SetPointEnabled(false);
             }
         }
         if (selectionState == SelectionState.Face) {
